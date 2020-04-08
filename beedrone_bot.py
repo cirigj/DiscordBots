@@ -6,6 +6,7 @@ import re
 import asyncio
 from source.bot_utils.parsing_utils import ParserUtils
 from source.bot_utils.message_utils import MessageHelper
+from source.bot_utils.run_utils import RunUtils
 from source.beebot.bee_message import BeeMessage
 
 import sys
@@ -131,7 +132,7 @@ async def on_message(message):
             await BeeMessage.print_disapproval_detected(message, output)
             return
 
-    if re.match('^(hey|hi)*( )*(bee) *(bot),*.*\\?', message.content.lower()):
+    if re.match('^(hey|hi|ok|okay)*( )*(bee) *(bot),*.*\\?', message.content.lower()):
         on_message_post_process(message)
         await BeeMessage.respond_to_message(message, output)
         return
@@ -189,4 +190,4 @@ async def on_message(message):
 
     await output.send(message.channel)
 
-bot.run('Njk1MDQxMTEyMDc4ODExMTY2.XoUZgA.NU5Pd5s3Txj57cFQZL1nhVZIon8')
+bot.run(RunUtils().GetToken('beebot'))

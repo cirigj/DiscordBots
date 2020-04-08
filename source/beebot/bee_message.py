@@ -226,6 +226,11 @@ class BeeMessage:
                 'I am doing well, thank you for asking.',
                 'I am just bee vibing.'
             ]
+        elif re.match('.*(are|r) * (you|u) *(there|here).*', message.content.lower()):
+            responses = [
+                'I am online, and feeling good. Feel free to ask me any questions you have.',
+                'I am here. Do you need something?'
+            ]
         elif re.match('.*(are|r)* *(you|ya|u) (ok|alright|good|okay).*', message.content.lower()):
             responses = [
                 'Yes, I am fine, thank you for asking.',
