@@ -1,23 +1,62 @@
 import re
 import random
 
+class BeeMessageCtx:
+    def __init__(self, message, output, message_helper):
+        self.message = message
+        self.content = message.content
+        self.channel = message.channel
+        self.output = output
+        self.message_helper = message_helper
+
 class BeeMessage:
-    def __init__(self):
-        pass
+    def __init__(self, conditions, pattern, responses, reactions):
+        self.conditions = conditions
+        self.pattern = pattern
+        self.responses = responses
+        self.reactions = reactions
 
-    async def print_love(message, output):
-        reactions = ['💕','<:pixelbee:693561005975797861>']
-        for emoji in reactions:
-            await message.add_reaction(emoji)
+    async def print_random_response(self, ctx):
+        response = random.choice(self.responses)
+        print(f'{response} <:pixelbee:693561005975797861>', file=ctx.output)
+        await ctx.output.send(ctx.channel, raw=True)
 
-    async def print_thumbsup(message, output):
-        reactions = ['👍','<:pixelbee:693561005975797861>']
-        for emoji in reactions:
-            await message.add_reaction(emoji)
+    async def respond_if_pattern_match(self, ctx):
+        if re.match(self.pattern, ctx.content.lower()):
+            if self.reactions is not None:
+                for emoji in self.reactions:
+                    await ctx.message.add_reaction(emoji)
+                await ctx.message.add_reaction('<:pixelbee:693561005975797861>')
+            if self.responses is not None:
+                ctx.message_helper.on_message_post_process(ctx.message)
+                await self.print_random_response(ctx)
+            return True
+        return False
 
-    async def print_reverse(message, output):
-        print('<:beeverse:696609073361059870> <:pixelbee:693561005975797861>', file=output)
-        await output.send(message.channel, raw=True)
+    async def parse_context(self, ctx):
+        if 'any' in self.conditions:
+            return await self.respond_if_pattern_match(ctx)
+        if 'response' in self.conditions:
+            if ctx.message_helper.authored_last_message:
+                return await self.respond_if_pattern_match(ctx)
+        if 'question' in self.conditions:
+            if re.match('^(hey|hi|ok|okay)*( )*(bee) *(bot),*.*\\?', ctx.content.lower()):
+                return await self.respond_if_pattern_match(ctx)
+        if 'mention' in self.conditions:
+            if re.match('.*bee *bot.*', ctx.content.lower()):
+                return await self.respond_if_pattern_match(ctx)
+                
+
+class BeeMessageHelper:
+    def __init__(self, user):
+        self.authored_last_message = False
+        self.user = user
+
+    def on_message_post_process(self, message):
+        if message.author == self.user:
+            self.authored_last_message = True
+        else:
+            self.authored_last_message = False
 
     async def print_random_response(message, responses, output):
         response = random.choice(responses)
@@ -30,49 +69,29 @@ class BeeMessage:
             'Please don\'t shout. Thank you.',
             'That\'s a lot of capital letters. I sense excitement. Or perhaps something else?'
         ]
-        await BeeMessage.print_random_response(message, responses, output)
-
-    async def print_disapproval_detected(message, output):
-        responses = [
-            'I\'m just doing what I was programmed for.',
-            'Please don\'t be upset, you\'ll get it next time.'
-        ]
-        await BeeMessage.print_random_response(message, responses, output)
-
-    async def print_apology_detected(message, output):
-        responses = [
-            'It\'s okay, don\'t worry about it.',
-            'No need to apologize.'
-        ]
-        await BeeMessage.print_random_response(message, responses, output)
+        await BeeMessageHelper.print_random_response(message, responses, output)
 
     async def print_pear_gang(message, output):
         responses = [
             'Pear gang is fine, but bee gang is better.',
             'Pear gang is okay, I guess. Bee gang is the best, though.'
         ]
-        await BeeMessage.print_random_response(message, responses, output)
+        await BeeMessageHelper.print_random_response(message, responses, output)
 
-    async def print_goodnight(message, output):
+    async def print_mods_cute(message, output):
         responses = [
-            'Goodnight, have pleasant dreams.',
-            'Have a good night!',
+            'Mods cute.',
+            'Mods poggy woggy.'
         ]
-        await BeeMessage.print_random_response(message, responses, output)
-
-    async def print_despacito(message, output):
-        responses = [
-            'I\'m afraid I don\'t know that reference.'
-        ]
-        await BeeMessage.print_random_response(message, responses, output)
+        await BeeMessageHelper.print_random_response(message, responses, output)
 
     async def print_69(message, output):
         responses = [
             'Nice.'
         ]
-        await BeeMessage.print_random_response(message, responses, output)
+        await BeeMessageHelper.print_random_response(message, responses, output)
 
-    def get_corrections(message):
+    def get_corrections(self, message):
         corrections = [
             ('(^|[ \'"(])be([ .,?!;\'")]|$)+', 'bee'),
             ('being','beeing'),
@@ -84,14 +103,14 @@ class BeeMessage:
             ('unbelievable','unbeelievable'),
             ('believably','beelievably'),
             ('unbelievably','unbeelievably'),
-            ('maybe ','maybee'),
+            ('maybe( |$)','maybee'),
             ('beautiful','beeautiful'),
             ('baby','baybee'),
             ('behavior','beehavior'),
             ('behaviour','beehaviour'),
             ('beloved','beeloved'),
             ('begun','beegun'),
-            ('begin','beegin'),
+            ('begin( |$)','beegin'),
             ('began','beegan'),
             ('begone','beegone'),
             ('beginning','beeginning'),
@@ -101,7 +120,8 @@ class BeeMessage:
             ('between','beetween'),
             ('beholden','beeholden'),
             ('beholder','beeholder'),
-            ('bestow','beestow')
+            ('bestow','beestow'),
+            ('bean','beean')
         ]
 
         found = []
@@ -253,7 +273,7 @@ class BeeMessage:
             ]
             response = random.choice(responses)
             print(f'{response}', file=output)
-            responses = BeeMessage.get_bee_facts()
+            responses = BeeMessageHelper.get_bee_facts()
         elif re.match('.*(what|wat) *(do) *(you|u) *(think).*', message.content.lower()):
             responses = [
                 'I do not know that I have an opinion on this.',
@@ -299,4 +319,4 @@ class BeeMessage:
                 'I unfortunately cannot understand what you are asking. My apologies.',
                 'I am unsure how to answer that.'
             ]
-        await BeeMessage.print_random_response(message, responses, output)
+        await BeeMessageHelper.print_random_response(message, responses, output)

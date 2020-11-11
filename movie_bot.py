@@ -91,8 +91,10 @@ async def update_message(msg):
         interactions += reaction.count
     reactions['interactions'] = interactions
     reactions['title'] = msg.content.split(':', 1)[1].split('\n', 1)[0].strip()
-    suggestion_key = msg.id
-    bot.suggestions[suggestion_key] = reactions
+    bot.suggestions[msg.id] = reactions
+
+async def delete_message(msg_id):
+    del bot.suggestions[msg_id]
 
 async def update_from_payload(payload):
     if payload.channel_id != bot.suggestion_channel_id:
@@ -102,6 +104,18 @@ async def update_from_payload(payload):
     message = await channel.fetch_message(payload.message_id)
     if message_is_suggestion(message):
         await update_message(message)
+        write_to_file()
+    elif payload.message_id in bot.suggestions:
+        await delete_message(message.id)
+        write_to_file()
+
+async def delete_from_payload(payload):
+    if payload.channel_id != bot.suggestion_channel_id:
+        return
+        
+    channel = bot.get_channel(payload.channel_id)
+    if payload.message_id in bot.suggestions:
+        await delete_message(payload.message_id)
         write_to_file()
 
 async def wait_for_setup():
@@ -188,6 +202,12 @@ async def on_raw_message_edit(payload):
     await wait_for_setup()
     print('suggestion updated')
     await update_from_payload(payload)
+
+@bot.event
+async def on_raw_message_delete(payload):
+    await wait_for_setup()
+    print('suggestion deleted')
+    await delete_from_payload(payload)
 
 @bot.event
 async def on_raw_reaction_add(payload):

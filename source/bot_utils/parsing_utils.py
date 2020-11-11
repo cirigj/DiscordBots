@@ -24,7 +24,7 @@ class ParserUtils:
 
         pos = dict()
         opt = dict()
-        fil = dict()
+        ext = []
 
         for arg in arguments:
             if len(positional_args) > 0:
@@ -44,11 +44,14 @@ class ParserUtils:
             elif len(optional_pos_args) > 0:
                 pos[optional_pos_args[0]] = arg
                 optional_pos_args.pop(0)
+            
+            else:
+                ext.append(arg)
 
         if len(positional_args) > 0:
             return None
 
-        return {'pos':pos, 'opt':opt, 'fil':fil}
+        return {'pos':pos, 'opt':opt, 'ext':ext}
 
     def get_option(self, options, full_opt, short_opt=None):
         if short_opt is None:
